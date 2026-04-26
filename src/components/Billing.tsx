@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { User, Service, ServiceGroup, Customer, OrderItem, Order } from '../lib/types';
+import { User, Service, ServiceGroup, Customer, OrderItem, Order, Appointment } from '../lib/types';
 import { flattenServiceGroups, loadServiceGroups } from '../lib/services';
 import { fmt, today, uid, cn } from '../lib/utils';
 import { 
@@ -8,13 +8,15 @@ import {
   Minus, 
   RotateCcw, 
   Check, 
-  UserPlus, 
   ArrowRight,
   X,
   CreditCard,
   Banknote,
   Smartphone,
-  Wallet
+  Wallet,
+  Calendar as CalendarIcon,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -25,15 +27,24 @@ interface BillingProps {
 export default function Billing({ user }: BillingProps) {
   const [groups, setGroups] = useState<ServiceGroup[]>([]);
   const [custs, setCusts] = useState<Customer[]>([]);
+  const [appts, setAppts] = useState<Appointment[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState('all');
   const [search, setSearch] = useState('');
   
   const [cart, setCart] = useState<Record<string, OrderItem>>({});
-  const [selectedCustId, setSelectedCustId] = useState('');
+  const [selectedApptId, setSelectedApptId] = useState('');
   const [discountValue, setDiscountValue] = useState(0);
   const [discountType, setDiscountType] = useState<'amount' | 'percent'>('amount');
   const [payMethod, setPayMethod] = useState('cash');
   const [note, setNote] = useState('');
+
+  const [isApptEditOpen, setIsApptEditOpen] = useState(false);
+  const [editApptName, setEditApptName] = useState('');
+  const [editApptPhone, setEditApptPhone] = useState('');
+  const [editApptDate, setEditApptDate] = useState(today());
+  const [editApptTime, setEditApptTime] = useState('09:00');
+  const [editApptSvc, setEditApptSvc] = useState('');
+  const [editApptNote, setEditApptNote] = useState('');
   
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isDoneOpen, setIsDoneOpen] = useState(false);
@@ -42,9 +53,18 @@ export default function Billing({ user }: BillingProps) {
   useEffect(() => {
     setGroups(loadServiceGroups(user.id));
     setCusts(JSON.parse(localStorage.getItem(`bp_customers_${user.id}`) || '[]'));
+    setAppts(JSON.parse(localStorage.getItem(`bp_appointments_${user.id}`) || '[]'));
   }, [user.id]);
 
   const svcs = useMemo(() => flattenServiceGroups(groups), [groups]);
+  const billableAppts = useMemo(() => {
+    const tDate = today();
+    return appts
+      .filter(a => a.status === 'pending' && a.date >= tDate)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  }, [appts]);
+  const selectedAppt = appts.find(a => a.id === selectedApptId);
+  const selectedCustId = selectedAppt?.customerId || '';
 
   const filteredSvcs = useMemo(() => {
     return svcs.filter(s => {
@@ -79,23 +99,24 @@ export default function Billing({ user }: BillingProps) {
   const total = Math.max(0, subtotal - discount);
 
   const handleCheckout = () => {
-    if (Object.keys(cart).length === 0) return;
+    if (Object.keys(cart).length === 0 || !selectedAppt) return;
     setIsCheckoutOpen(true);
   };
 
   const confirmPay = () => {
+    if (!selectedAppt) return;
     const cust = custs.find(c => c.id === selectedCustId);
     const order: Order = {
       id: uid(),
       date: today(),
-      customer: cust ? cust.name : 'Khách vãng lai',
-      customerId: selectedCustId,
+      customer: cust ? cust.name : selectedAppt.name,
+      customerId: selectedCustId || '',
       items: Object.values(cart) as OrderItem[],
       subtotal,
       discount,
       total,
       method: payMethod,
-      note,
+      note: note || selectedAppt.note || selectedAppt.svc,
       createdAt: new Date().toISOString()
     };
 
@@ -121,6 +142,10 @@ export default function Billing({ user }: BillingProps) {
       setCusts(updatedCusts);
     }
 
+    const updatedAppts = appts.map(a => a.id === selectedAppt.id ? { ...a, status: 'done' as const } : a);
+    setAppts(updatedAppts);
+    localStorage.setItem(`bp_appointments_${user.id}`, JSON.stringify(updatedAppts));
+
     setLastOrder(order);
     setIsCheckoutOpen(false);
     setIsDoneOpen(true);
@@ -129,9 +154,52 @@ export default function Billing({ user }: BillingProps) {
 
   const resetForm = () => {
     setCart({});
-    setSelectedCustId('');
+    setSelectedApptId('');
     setDiscountValue(0);
     setPayMethod('cash');
+    setNote('');
+  };
+
+  const selectAppointment = (id: string) => {
+    setSelectedApptId(id);
+    const appt = appts.find(a => a.id === id);
+    setNote(appt?.note || appt?.svc || '');
+  };
+
+  const openAppointmentEdit = () => {
+    if (!selectedAppt) return;
+    setEditApptName(selectedAppt.name);
+    setEditApptPhone(selectedAppt.phone);
+    setEditApptDate(selectedAppt.date);
+    setEditApptTime(selectedAppt.time);
+    setEditApptSvc(selectedAppt.svc);
+    setEditApptNote(selectedAppt.note);
+    setIsApptEditOpen(true);
+  };
+
+  const saveAppointmentEdit = () => {
+    if (!selectedAppt || !editApptName.trim() || !editApptDate) return;
+    const next = appts.map(a => a.id === selectedAppt.id ? {
+      ...a,
+      name: editApptName.trim(),
+      phone: editApptPhone.trim(),
+      date: editApptDate,
+      time: editApptTime,
+      svc: editApptSvc.trim(),
+      note: editApptNote.trim(),
+    } : a);
+    setAppts(next);
+    localStorage.setItem(`bp_appointments_${user.id}`, JSON.stringify(next));
+    setNote(editApptNote.trim() || editApptSvc.trim());
+    setIsApptEditOpen(false);
+  };
+
+  const deleteSelectedAppointment = () => {
+    if (!selectedAppt || !confirm('Xoá lịch hẹn này?')) return;
+    const next = appts.filter(a => a.id !== selectedAppt.id);
+    setAppts(next);
+    localStorage.setItem(`bp_appointments_${user.id}`, JSON.stringify(next));
+    setSelectedApptId('');
     setNote('');
   };
 
@@ -205,15 +273,45 @@ export default function Billing({ user }: BillingProps) {
                 <RotateCcw className="w-4 h-4" />
               </button>
             </div>
-            <div className="relative">
+            <div className="space-y-3">
               <select 
-                value={selectedCustId}
-                onChange={e => setSelectedCustId(e.target.value)}
+                value={selectedApptId}
+                onChange={e => selectAppointment(e.target.value)}
                 className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-sm font-medium outline-none appearance-none cursor-pointer focus:bg-white/20"
               >
-                <option value="" className="text-gray-900">Khách vãng lai</option>
-                {custs.map(c => <option key={c.id} value={c.id} className="text-gray-900">{c.name} - {c.phone}</option>)}
+                <option value="" className="text-gray-900">Chọn lịch hẹn để thanh toán</option>
+                {billableAppts.map(a => (
+                  <option key={a.id} value={a.id} className="text-gray-900">
+                    {a.date === today() ? 'Hôm nay' : a.date} {a.time} - {a.name}
+                  </option>
+                ))}
               </select>
+              {selectedAppt ? (
+                <div className="rounded-2xl bg-white/10 border border-white/15 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 text-xs font-bold text-white/70">
+                        <CalendarIcon className="h-3.5 w-3.5" />
+                        <span>{selectedAppt.date} • {selectedAppt.time}</span>
+                      </div>
+                      <div className="mt-1 truncate text-sm font-black">{selectedAppt.name}</div>
+                      <div className="truncate text-[11px] font-medium text-white/70">{selectedAppt.svc || 'Chưa ghi dịch vụ'}{selectedAppt.phone ? ` • ${selectedAppt.phone}` : ''}</div>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      <button onClick={openAppointmentEdit} className="rounded-lg p-2 hover:bg-white/10" type="button" aria-label="Sửa lịch hẹn">
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button onClick={deleteSelectedAppointment} className="rounded-lg p-2 hover:bg-white/10" type="button" aria-label="Xoá lịch hẹn">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-[11px] font-medium text-white/70">
+                  {billableAppts.length > 0 ? 'Chọn một lịch hẹn trước khi thanh toán.' : 'Chưa có lịch hẹn đang chờ để thanh toán.'}
+                </div>
+              )}
             </div>
           </div>
 
@@ -286,7 +384,7 @@ export default function Billing({ user }: BillingProps) {
 
               <button 
                 onClick={handleCheckout}
-                disabled={total === 0}
+                disabled={total === 0 || !selectedAppt}
                 className="w-full bg-accent disabled:bg-gray-300 hover:bg-accent-dark text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-accent/20"
               >
                 Tiếp tục thanh toán
@@ -310,7 +408,7 @@ export default function Billing({ user }: BillingProps) {
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="text-2xl font-serif font-bold text-gray-900">Thanh toán</h3>
-                    <p className="text-xs font-medium text-gray-500">Xác nhận đơn hàng của {selectedCustId ? custs.find(c => c.id === selectedCustId)?.name : 'Khách vãng lai'}</p>
+                    <p className="text-xs font-medium text-gray-500">Xác nhận đơn hàng của {selectedAppt?.name}</p>
                   </div>
                   <button onClick={() => setIsCheckoutOpen(false)} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                 </div>
@@ -376,6 +474,51 @@ export default function Billing({ user }: BillingProps) {
         )}
       </AnimatePresence>
 
+      {/* Appointment Edit Modal */}
+      <AnimatePresence>
+        {isApptEditOpen && selectedAppt && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[101] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-3xl w-full max-w-sm overflow-hidden p-6 space-y-5 shadow-2xl"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-serif font-bold text-gray-900">Sửa lịch hẹn</h3>
+                <button onClick={() => setIsApptEditOpen(false)} className="p-1 hover:bg-gray-100 rounded-full" type="button">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <Field label="Tên khách">
+                  <input value={editApptName} onChange={e => setEditApptName(e.target.value)} className="input-field" />
+                </Field>
+                <Field label="SĐT">
+                  <input value={editApptPhone} onChange={e => setEditApptPhone(e.target.value)} className="input-field" />
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Ngày">
+                    <input type="date" value={editApptDate} onChange={e => setEditApptDate(e.target.value)} className="input-field" />
+                  </Field>
+                  <Field label="Giờ">
+                    <input type="time" value={editApptTime} onChange={e => setEditApptTime(e.target.value)} className="input-field" />
+                  </Field>
+                </div>
+                <Field label="Dịch vụ dự định">
+                  <textarea value={editApptSvc} onChange={e => setEditApptSvc(e.target.value)} className="input-field min-h-[70px]" />
+                </Field>
+                <Field label="Ghi chú">
+                  <textarea value={editApptNote} onChange={e => setEditApptNote(e.target.value)} className="input-field min-h-[70px]" />
+                </Field>
+              </div>
+              <button onClick={saveAppointmentEdit} className="w-full py-4 bg-accent hover:bg-accent-dark text-white font-bold rounded-2xl transition-all shadow-xl shadow-accent/20">
+                Lưu lịch hẹn
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Success Modal */}
       <AnimatePresence>
         {isDoneOpen && lastOrder && (
@@ -414,6 +557,15 @@ export default function Billing({ user }: BillingProps) {
           </div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string, children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</label>
+      {children}
     </div>
   );
 }
