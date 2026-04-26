@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { User, Service, Customer, OrderItem, Order } from '../lib/types';
+import { User, Service, ServiceGroup, Customer, OrderItem, Order } from '../lib/types';
+import { flattenServiceGroups, loadServiceGroups } from '../lib/services';
 import { fmt, today, uid, cn } from '../lib/utils';
 import { 
   Search, 
@@ -22,9 +23,9 @@ interface BillingProps {
 }
 
 export default function Billing({ user }: BillingProps) {
-  const [svcs, setSvcs] = useState<Service[]>([]);
+  const [groups, setGroups] = useState<ServiceGroup[]>([]);
   const [custs, setCusts] = useState<Customer[]>([]);
-  const [filter, setFilter] = useState<'all' | 'service' | 'combo'>('all');
+  const [selectedGroupId, setSelectedGroupId] = useState('all');
   const [search, setSearch] = useState('');
   
   const [cart, setCart] = useState<Record<string, OrderItem>>({});
@@ -39,17 +40,20 @@ export default function Billing({ user }: BillingProps) {
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
 
   useEffect(() => {
-    setSvcs(JSON.parse(localStorage.getItem(`bp_services_${user.id}`) || '[]'));
+    setGroups(loadServiceGroups(user.id));
     setCusts(JSON.parse(localStorage.getItem(`bp_customers_${user.id}`) || '[]'));
   }, [user.id]);
 
+  const svcs = useMemo(() => flattenServiceGroups(groups), [groups]);
+
   const filteredSvcs = useMemo(() => {
     return svcs.filter(s => {
-      const matchType = filter === 'all' || s.type === filter;
-      const matchSearch = s.name.toLowerCase().includes(search.toLowerCase());
-      return matchType && matchSearch;
+      const matchGroup = selectedGroupId === 'all' || s.groupId === selectedGroupId;
+      const query = search.toLowerCase();
+      const matchSearch = s.name.toLowerCase().includes(query) || (s.groupName || '').toLowerCase().includes(query);
+      return matchGroup && matchSearch;
     });
-  }, [svcs, filter, search]);
+  }, [svcs, selectedGroupId, search]);
 
   const toggleItem = (s: Service) => {
     setCart(prev => {
@@ -148,10 +152,11 @@ export default function Billing({ user }: BillingProps) {
           </div>
         </header>
 
-        <div className="flex gap-2 p-1 bg-gray-100 rounded-xl w-fit">
-          <Tab active={filter === 'all'} onClick={() => setFilter('all')} label="Tất cả" />
-          <Tab active={filter === 'service'} onClick={() => setFilter('service')} label="Dịch vụ" />
-          <Tab active={filter === 'combo'} onClick={() => setFilter('combo')} label="Combo" />
+        <div className="flex gap-2 overflow-x-auto rounded-xl bg-gray-100 p-1">
+          <Tab active={selectedGroupId === 'all'} onClick={() => setSelectedGroupId('all')} label="Tất cả" />
+          {groups.map(group => (
+            <Tab key={group.id} active={selectedGroupId === group.id} onClick={() => setSelectedGroupId(group.id)} label={group.name} />
+          ))}
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -173,7 +178,7 @@ export default function Billing({ user }: BillingProps) {
               )}
               <div className="space-y-1">
                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex justify-between">
-                  <span>{s.type === 'combo' ? 'Combo' : 'Dịch vụ'}</span>
+                  <span className="truncate pr-2">{s.groupName || (s.type === 'combo' ? 'Combo' : 'Dịch vụ')}</span>
                   {s.dur > 0 && <span>{s.dur}ph</span>}
                 </div>
                 <div className="text-sm font-bold text-gray-900 leading-snug group-hover:text-accent transition-colors">
@@ -418,7 +423,7 @@ function Tab({ active, onClick, label }: { active: boolean, onClick: () => void,
     <button
       onClick={onClick}
       className={cn(
-        "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
+        "shrink-0 px-4 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap",
         active ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
       )}
     >

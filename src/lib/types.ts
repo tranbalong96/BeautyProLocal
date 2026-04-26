@@ -17,9 +17,18 @@ export interface Service {
   id: string;
   name: string;
   type: 'service' | 'combo';
+  groupId?: string;
+  groupName?: string;
   price: number;
   dur: number;
   desc: string;
+}
+
+export interface ServiceGroup {
+  id: string;
+  name: string;
+  desc: string;
+  services: Service[];
 }
 
 export interface Customer {

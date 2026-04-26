@@ -42,6 +42,10 @@
     @apply bg-accent-light text-accent;
   }
 
+  .input-field {
+    @apply w-full rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none transition-colors focus:border-accent;
+  }
+
   .mobile-bottom-nav {
     padding-bottom: calc(0.375rem + env(safe-area-inset-bottom));
   }
