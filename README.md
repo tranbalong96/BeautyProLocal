@@ -1,20 +1,40 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# BeautyPro
 
-# Run and deploy your AI Studio app
+BeautyPro là ứng dụng web quản lý salon và cửa hàng làm đẹp, hỗ trợ các nghiệp vụ hằng ngày như tính tiền, quản lý hoá đơn, lịch hẹn, khách hàng, dịch vụ/combo và thống kê doanh thu.
 
-This contains everything you need to run your app locally.
+## Tính năng chính
 
-View your app in AI Studio: https://ai.studio/apps/7325fdf3-df53-4b5b-af1d-6db5c6451192
+- Thiết lập nhanh thông tin salon/cửa hàng
+- Quản lý dịch vụ, combo và bảng giá
+- Tạo hoá đơn, theo dõi lịch sử bán hàng
+- Quản lý lịch hẹn và hồ sơ khách hàng
+- Xem tổng quan vận hành và thống kê kinh doanh
 
-## Run Locally
+## Chạy local
 
-**Prerequisites:**  Node.js
+**Yêu cầu:** Node.js
 
+1. Cài dependencies:
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+   ```bash
+   npm install
+   ```
+
+2. Chạy ứng dụng:
+
+   ```bash
+   npm run dev
+   ```
+
+3. Mở địa chỉ Vite hiển thị trong terminal, mặc định là:
+
+   ```text
+   http://localhost:3000
+   ```
+
+## Scripts
+
+- `npm run dev`: chạy môi trường phát triển
+- `npm run build`: build bản production
+- `npm run preview`: xem thử bản production sau khi build
+- `npm run lint`: kiểm tra TypeScript
