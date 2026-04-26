@@ -107,7 +107,7 @@ export default function Services({ user }: ServicesProps) {
 
   const saveService = () => {
     const targetGroup = groups.find(group => group.id === serviceGroupId);
-    if (!targetGroup || !name.trim() || price <= 0) return;
+    if (!targetGroup || !name.trim() || price < 0) return;
     const service: Service = {
       id: editServiceId || uid(),
       name: name.trim(),
