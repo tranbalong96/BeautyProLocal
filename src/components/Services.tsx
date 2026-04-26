@@ -43,11 +43,11 @@ export default function Services({ user }: ServicesProps) {
     localStorage.setItem(`bp_services_${user.id}`, JSON.stringify(next));
   };
 
-  const openModal = (s?: Service) => {
+  const openModal = (s?: Service, nextType: 'service' | 'combo' = 'service') => {
     if (s) {
       setEditId(s.id); setName(s.name); setType(s.type); setPrice(s.price); setDur(s.dur); setDesc(s.desc);
     } else {
-      setEditId(null); setName(''); setType('service'); setPrice(0); setDur(0); setDesc('');
+      setEditId(null); setName(''); setType(nextType); setPrice(0); setDur(0); setDesc('');
     }
     setIsModalOpen(true);
   };
@@ -58,17 +58,27 @@ export default function Services({ user }: ServicesProps) {
 
   const singles = svcs.filter(s => s.type === 'service');
   const combos = svcs.filter(s => s.type === 'combo');
+  const serviceCountText = `${singles.length} dịch vụ • ${combos.length} combo`;
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-serif font-bold text-gray-900">Bảng giá Dịch vụ</h2>
-          <p className="text-sm font-medium text-gray-500">Thiết lập menu và combo ưu đãi.</p>
+    <div className="space-y-6">
+      <header className="sticky top-0 -mx-4 -mt-4 bg-[#FAFAF9]/95 px-4 pt-4 pb-3 backdrop-blur lg:static lg:m-0 lg:bg-transparent lg:p-0 z-30">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-2xl font-serif font-bold text-gray-900">Bảng giá Dịch vụ</h2>
+            <p className="text-sm font-medium text-gray-500">Thiết lập menu và combo ưu đãi.</p>
+            <p className="mt-1 text-[11px] font-bold uppercase tracking-widest text-gray-400">{serviceCountText}</p>
+          </div>
+          <button
+            onClick={() => openModal()}
+            className="btn-primary shrink-0 px-3 sm:px-4"
+            aria-label="Thêm dịch vụ hoặc combo mới"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Thêm dịch vụ/gói mới</span>
+            <span className="sm:hidden">Thêm</span>
+          </button>
         </div>
-        <button onClick={() => openModal()} className="btn-primary">
-          <Plus className="w-4 h-4" /> Thêm dịch vụ/gói mới
-        </button>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -78,7 +88,7 @@ export default function Services({ user }: ServicesProps) {
             <h3 className="text-lg font-serif font-bold text-gray-900">Dịch vụ đơn lẻ</h3>
           </div>
           <div className="space-y-3">
-            {singles.length > 0 ? singles.map(s => <SvcItem key={s.id} s={s} onEdit={openModal} onDelete={deleteSvc} />) : <EmptyState />}
+            {singles.length > 0 ? singles.map(s => <SvcItem key={s.id} s={s} onEdit={openModal} onDelete={deleteSvc} />) : <EmptyState onAdd={() => openModal(undefined, 'service')} label="Thêm dịch vụ đầu tiên" />}
           </div>
         </section>
 
@@ -88,10 +98,18 @@ export default function Services({ user }: ServicesProps) {
             <h3 className="text-lg font-serif font-bold text-gray-900">Combo & Gói ưu đãi</h3>
           </div>
           <div className="space-y-3">
-            {combos.length > 0 ? combos.map(s => <SvcItem key={s.id} s={s} onEdit={openModal} onDelete={deleteSvc} />) : <EmptyState />}
+            {combos.length > 0 ? combos.map(s => <SvcItem key={s.id} s={s} onEdit={openModal} onDelete={deleteSvc} />) : <EmptyState onAdd={() => openModal(undefined, 'combo')} label="Thêm combo đầu tiên" />}
           </div>
         </section>
       </div>
+
+      <button
+        onClick={() => openModal()}
+        className="lg:hidden fixed right-4 bottom-20 z-40 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-white shadow-2xl shadow-accent/30 active:scale-95"
+        aria-label="Thêm dịch vụ hoặc combo mới"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
 
       <AnimatePresence>
         {isModalOpen && (
@@ -153,8 +171,14 @@ function SvcItem({ s, onEdit, onDelete }: { s: Service, onEdit: (s: Service) => 
   );
 }
 
-function EmptyState() {
+function EmptyState({ onAdd, label }: { onAdd: () => void, label: string }) {
   return (
-    <div className="py-8 text-center text-gray-300 italic text-xs font-medium">Chưa có dịch vụ trong danh mục này.</div>
+    <div className="rounded-2xl border border-dashed border-gray-200 bg-white/70 p-6 text-center">
+      <p className="mb-3 text-xs font-medium italic text-gray-400">Chưa có dịch vụ trong danh mục này.</p>
+      <button onClick={onAdd} className="btn-outline mx-auto text-xs">
+        <Plus className="h-4 w-4" />
+        {label}
+      </button>
+    </div>
   );
 }

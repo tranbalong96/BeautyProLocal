@@ -119,11 +119,12 @@ export default function App() {
       </aside>
 
       {/* Mobile Bottom Nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-1 flex justify-around items-center z-50">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-1 py-1 flex justify-around items-center z-50">
         <MobileNavItem active={path === 'dashboard'} onClick={() => setPath('dashboard')} icon={LayoutDashboard} label="Q.Lý" />
         <MobileNavItem active={path === 'billing'} onClick={() => setPath('billing')} icon={Receipt} label="Bán hàng" />
         <MobileNavItem active={path === 'schedule'} onClick={() => setPath('schedule')} icon={Calendar} label="Lịch" />
         <MobileNavItem active={path === 'customers'} onClick={() => setPath('customers')} icon={Users} label="Khách" />
+        <MobileNavItem active={path === 'services'} onClick={() => setPath('services')} icon={Settings} label="Dịch vụ" />
         <MobileNavItem active={path === 'stats'} onClick={() => setPath('stats')} icon={LineChart} label="K.Doanh" />
       </nav>
 
@@ -158,12 +159,12 @@ function MobileNavItem({ active, onClick, icon: Icon, label }: { active: boolean
     <button
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all",
+        "flex flex-col items-center gap-1 px-1.5 py-2 rounded-lg transition-all min-w-0 flex-1",
         active ? "text-accent" : "text-gray-400 font-medium"
       )}
     >
       <Icon className="w-5 h-5" />
-      <span className="text-[10px] font-bold uppercase tracking-tight">{label}</span>
+      <span className="text-[9px] font-bold uppercase tracking-tight leading-none whitespace-nowrap">{label}</span>
     </button>
   );
 }
