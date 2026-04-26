@@ -18,6 +18,7 @@ export default function Services({ user }: ServicesProps) {
 
   const [groupName, setGroupName] = useState('');
   const [groupDesc, setGroupDesc] = useState('');
+  const [serviceGroupId, setServiceGroupId] = useState('');
   const [name, setName] = useState('');
   const [type, setType] = useState<'service' | 'combo'>('service');
   const [price, setPrice] = useState(0);
@@ -59,6 +60,7 @@ export default function Services({ user }: ServicesProps) {
     if (!selectedGroup) return;
     if (service) {
       setEditServiceId(service.id);
+      setServiceGroupId(service.groupId || selectedGroup.id);
       setName(service.name);
       setType(service.type);
       setPrice(service.price);
@@ -66,6 +68,7 @@ export default function Services({ user }: ServicesProps) {
       setDesc(service.desc);
     } else {
       setEditServiceId(null);
+      setServiceGroupId(selectedGroup.id);
       setName('');
       setType('service');
       setPrice(0);
@@ -79,6 +82,7 @@ export default function Services({ user }: ServicesProps) {
     setModal(null);
     setEditGroupId(null);
     setEditServiceId(null);
+    setServiceGroupId('');
   };
 
   const saveGroup = () => {
@@ -105,26 +109,31 @@ export default function Services({ user }: ServicesProps) {
   };
 
   const saveService = () => {
-    if (!selectedGroup || !name.trim() || price <= 0) return;
+    const targetGroup = groups.find(group => group.id === serviceGroupId);
+    if (!targetGroup || !name.trim() || price <= 0) return;
+    const service: Service = {
+      id: editServiceId || uid(),
+      name: name.trim(),
+      type,
+      groupId: targetGroup.id,
+      groupName: targetGroup.name,
+      price,
+      dur,
+      desc: desc.trim(),
+    };
     const next = groups.map(group => {
-      if (group.id !== selectedGroup.id) return group;
-      const service: Service = {
-        id: editServiceId || uid(),
-        name: name.trim(),
-        type,
-        groupId: group.id,
-        groupName: group.name,
-        price,
-        dur,
-        desc: desc.trim(),
-      };
+      const servicesWithoutEdited = editServiceId
+        ? group.services.filter(item => item.id !== editServiceId)
+        : group.services;
+      if (group.id !== targetGroup.id) {
+        return { ...group, services: servicesWithoutEdited };
+      }
       return {
         ...group,
-        services: editServiceId
-          ? group.services.map(item => item.id === editServiceId ? service : item)
-          : [...group.services, service],
+        services: [...servicesWithoutEdited, service],
       };
     });
+    setSelectedGroupId(targetGroup.id);
     persist(next);
     closeModal();
   };
@@ -264,6 +273,13 @@ export default function Services({ user }: ServicesProps) {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  <Field label="Thuộc gói lớn">
+                    <select value={serviceGroupId} onChange={e => setServiceGroupId(e.target.value)} className="input-field">
+                      {groups.map(group => (
+                        <option key={group.id} value={group.id}>{group.name}</option>
+                      ))}
+                    </select>
+                  </Field>
                   <Field label="Tên dịch vụ con">
                     <input value={name} onChange={e => setName(e.target.value)} placeholder="Ví dụ: Sơn gel tay" className="input-field" />
                   </Field>
