@@ -132,15 +132,6 @@ export default function Customers({ user }: CustomersProps) {
                 )}
               </div>
             </button>
-
-            <button
-              onClick={() => deleteCust(c.id)}
-              className="absolute bottom-4 right-4 z-20 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-gray-400 shadow-sm ring-1 ring-gray-100 hover:bg-rose-50 hover:text-rose-500"
-              type="button"
-              aria-label={`Xoá ${c.name}`}
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
           </div>
         ))}
       </div>
