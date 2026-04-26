@@ -20,7 +20,6 @@ export default function Services({ user }: ServicesProps) {
   const [groupDesc, setGroupDesc] = useState('');
   const [serviceGroupId, setServiceGroupId] = useState('');
   const [name, setName] = useState('');
-  const [type, setType] = useState<'service' | 'combo'>('service');
   const [price, setPrice] = useState(0);
   const [dur, setDur] = useState(0);
   const [desc, setDesc] = useState('');
@@ -62,7 +61,6 @@ export default function Services({ user }: ServicesProps) {
       setEditServiceId(service.id);
       setServiceGroupId(service.groupId || selectedGroup.id);
       setName(service.name);
-      setType(service.type);
       setPrice(service.price);
       setDur(service.dur);
       setDesc(service.desc);
@@ -70,7 +68,6 @@ export default function Services({ user }: ServicesProps) {
       setEditServiceId(null);
       setServiceGroupId(selectedGroup.id);
       setName('');
-      setType('service');
       setPrice(0);
       setDur(0);
       setDesc('');
@@ -114,7 +111,7 @@ export default function Services({ user }: ServicesProps) {
     const service: Service = {
       id: editServiceId || uid(),
       name: name.trim(),
-      type,
+      type: 'service',
       groupId: targetGroup.id,
       groupName: targetGroup.name,
       price,
@@ -283,20 +280,14 @@ export default function Services({ user }: ServicesProps) {
                   <Field label="Tên dịch vụ con">
                     <input value={name} onChange={e => setName(e.target.value)} placeholder="Ví dụ: Sơn gel tay" className="input-field" />
                   </Field>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="Loại">
-                      <select value={type} onChange={e => setType(e.target.value as 'service' | 'combo')} className="input-field">
-                        <option value="service">Dịch vụ</option>
-                        <option value="combo">Combo</option>
-                      </select>
-                    </Field>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Field label="Giá (đ)">
                       <input type="number" value={price || ''} onChange={e => setPrice(parseFloat(e.target.value) || 0)} placeholder="0" className="input-field text-accent" />
                     </Field>
+                    <Field label="Thời gian (phút)">
+                      <input type="number" value={dur || ''} onChange={e => setDur(parseInt(e.target.value) || 0)} placeholder="60" className="input-field" />
+                    </Field>
                   </div>
-                  <Field label="Thời gian thực hiện (phút)">
-                    <input type="number" value={dur || ''} onChange={e => setDur(parseInt(e.target.value) || 0)} placeholder="60" className="input-field" />
-                  </Field>
                   <Field label="Mô tả ngắn">
                     <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="..." className="input-field min-h-[70px]" />
                   </Field>
