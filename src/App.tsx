@@ -119,13 +119,13 @@ export default function App() {
       </aside>
 
       {/* Mobile Bottom Nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-1 py-1 flex justify-around items-center z-50">
+      <nav className="mobile-bottom-nav lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-1.5 pt-1.5 flex items-stretch z-50 shadow-[0_-8px_24px_rgba(15,23,42,0.06)]">
         <MobileNavItem active={path === 'dashboard'} onClick={() => setPath('dashboard')} icon={LayoutDashboard} label="Q.Lý" />
-        <MobileNavItem active={path === 'billing'} onClick={() => setPath('billing')} icon={Receipt} label="Bán hàng" />
+        <MobileNavItem active={path === 'billing'} onClick={() => setPath('billing')} icon={Receipt} label="Bán" />
         <MobileNavItem active={path === 'schedule'} onClick={() => setPath('schedule')} icon={Calendar} label="Lịch" />
         <MobileNavItem active={path === 'customers'} onClick={() => setPath('customers')} icon={Users} label="Khách" />
         <MobileNavItem active={path === 'services'} onClick={() => setPath('services')} icon={Settings} label="Dịch vụ" />
-        <MobileNavItem active={path === 'stats'} onClick={() => setPath('stats')} icon={LineChart} label="K.Doanh" />
+        <MobileNavItem active={path === 'stats'} onClick={() => setPath('stats')} icon={LineChart} label="K.D" />
       </nav>
 
       {/* Main Content */}
@@ -159,11 +159,12 @@ function MobileNavItem({ active, onClick, icon: Icon, label }: { active: boolean
     <button
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center gap-1 px-1.5 py-2 rounded-lg transition-all min-w-0 flex-1",
-        active ? "text-accent" : "text-gray-400 font-medium"
+        "flex min-h-[58px] flex-1 min-w-0 touch-manipulation select-none flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 transition-all active:scale-95",
+        active ? "bg-accent-light text-accent" : "text-gray-400 font-medium active:bg-gray-100"
       )}
+      type="button"
     >
-      <Icon className="w-5 h-5" />
+      <Icon className="w-5 h-5 shrink-0" />
       <span className="text-[9px] font-bold uppercase tracking-tight leading-none whitespace-nowrap">{label}</span>
     </button>
   );

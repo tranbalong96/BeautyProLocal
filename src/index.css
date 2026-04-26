@@ -41,6 +41,10 @@
   .nav-item-active {
     @apply bg-accent-light text-accent;
   }
+
+  .mobile-bottom-nav {
+    padding-bottom: calc(0.375rem + env(safe-area-inset-bottom));
+  }
 }
 
 /* Print Styles */
@@ -55,4 +59,3 @@
     background: white;
   }
 }
-
