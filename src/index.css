@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+  
+  --color-accent: #7C3AED;
+  --color-accent-light: #EDE9FE;
+  --color-accent-dark: #5B21B6;
+  --color-rose-brand: #F43F5E;
+}
+
+@layer base {
+  body {
+    @apply bg-[#FAFAF9] text-gray-900 font-sans antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif tracking-tight;
+  }
+}
+
+@layer components {
+  .card-glass {
+    @apply bg-white border border-gray-200 rounded-xl shadow-sm;
+  }
+  
+  .btn-primary {
+    @apply bg-accent hover:bg-accent-dark text-white px-4 py-2 rounded-lg font-medium transition-all active:scale-95 flex items-center justify-center gap-2;
+  }
+  
+  .btn-outline {
+    @apply border-[1.5px] border-gray-200 hover:border-accent hover:text-accent text-gray-600 px-4 py-2 rounded-lg font-medium transition-all active:scale-95 flex items-center justify-center gap-2;
+  }
+
+  .nav-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-gray-500 font-medium transition-all hover:bg-accent-light hover:text-accent cursor-pointer;
+  }
+
+  .nav-item-active {
+    @apply bg-accent-light text-accent;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  body {
+    background: white;
+  }
+}
+
