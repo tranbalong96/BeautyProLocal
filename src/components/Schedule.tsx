@@ -29,11 +29,11 @@ export default function Schedule({ user }: ScheduleProps) {
 
   const filteredCustomers = useMemo(() => {
     const query = customerSearch.trim().toLowerCase();
-    if (!query) return custs.slice(0, 8);
+    if (!query) return custs.slice(0, 3);
     return custs.filter(c =>
       c.name.toLowerCase().includes(query) ||
       c.phone.includes(customerSearch.trim())
-    ).slice(0, 8);
+    ).slice(0, 3);
   }, [custs, customerSearch]);
 
   const selectCustomer = (customerId: string) => {
