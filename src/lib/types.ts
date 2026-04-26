@@ -44,6 +44,7 @@ export interface Customer {
 
 export interface Appointment {
   id: string;
+  customerId?: string;
   name: string;
   phone: string;
   date: string;

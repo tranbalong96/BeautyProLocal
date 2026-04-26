@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { User, Appointment } from '../lib/types';
+import { User, Appointment, Customer } from '../lib/types';
 import { fmtDate, today, uid, cn } from '../lib/utils';
-import { Calendar as CalendarIcon, Clock, Plus, Check, X, Phone, User as UserIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Plus, Check, X, Phone, User as UserIcon, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ScheduleProps {
@@ -10,8 +10,11 @@ interface ScheduleProps {
 
 export default function Schedule({ user }: ScheduleProps) {
   const [appts, setAppts] = useState<Appointment[]>([]);
+  const [custs, setCusts] = useState<Customer[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [customerSearch, setCustomerSearch] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [date, setDate] = useState(today());
@@ -21,12 +24,39 @@ export default function Schedule({ user }: ScheduleProps) {
 
   useEffect(() => {
     setAppts(JSON.parse(localStorage.getItem(`bp_appointments_${user.id}`) || '[]'));
+    setCusts(JSON.parse(localStorage.getItem(`bp_customers_${user.id}`) || '[]'));
   }, [user.id]);
+
+  const filteredCustomers = useMemo(() => {
+    const query = customerSearch.trim().toLowerCase();
+    if (!query) return custs.slice(0, 8);
+    return custs.filter(c =>
+      c.name.toLowerCase().includes(query) ||
+      c.phone.includes(customerSearch.trim())
+    ).slice(0, 8);
+  }, [custs, customerSearch]);
+
+  const selectCustomer = (customerId: string) => {
+    setSelectedCustomerId(customerId);
+    const customer = custs.find(c => c.id === customerId);
+    if (!customer) return;
+    setName(customer.name);
+    setPhone(customer.phone);
+    setCustomerSearch(`${customer.name}${customer.phone ? ` - ${customer.phone}` : ''}`);
+  };
+
+  const clearSelectedCustomer = () => {
+    setSelectedCustomerId('');
+    setCustomerSearch('');
+    setName('');
+    setPhone('');
+  };
 
   const saveAppt = () => {
     if (!name || !date) return;
     const newAppt: Appointment = {
       id: uid(),
+      customerId: selectedCustomerId || undefined,
       name,
       phone,
       date,
@@ -61,7 +91,7 @@ export default function Schedule({ user }: ScheduleProps) {
   };
 
   const resetForm = () => {
-    setName(''); setPhone(''); setDate(today()); setTime('09:00'); setSvc(''); setNote('');
+    setSelectedCustomerId(''); setCustomerSearch(''); setName(''); setPhone(''); setDate(today()); setTime('09:00'); setSvc(''); setNote('');
   };
 
   const tDate = today();
@@ -134,7 +164,46 @@ export default function Schedule({ user }: ScheduleProps) {
 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Khách hàng</label>
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Chọn khách hàng có sẵn</label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        value={customerSearch}
+                        onChange={e => {
+                          setCustomerSearch(e.target.value);
+                          setSelectedCustomerId('');
+                        }}
+                        placeholder="Tìm tên hoặc SĐT khách..."
+                        className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-accent transition-all text-sm font-medium"
+                      />
+                      {(customerSearch || selectedCustomerId) && (
+                        <button onClick={clearSelectedCustomer} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-rose-500" type="button">
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    {filteredCustomers.length > 0 && !selectedCustomerId && (
+                      <div className="max-h-36 overflow-y-auto rounded-xl border border-gray-100 bg-white p-1 shadow-sm">
+                        {filteredCustomers.map(c => (
+                          <button
+                            key={c.id}
+                            onClick={() => selectCustomer(c.id)}
+                            className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left hover:bg-accent-light"
+                            type="button"
+                          >
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-bold text-gray-900">{c.name}</span>
+                              <span className="block truncate text-[11px] font-medium text-gray-400">{c.phone || 'Chưa có SĐT'}</span>
+                            </span>
+                            <Plus className="h-4 w-4 shrink-0 text-accent" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Tên khách hàng</label>
                     <div className="relative">
                       <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input 
