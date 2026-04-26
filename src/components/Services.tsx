@@ -152,21 +152,35 @@ export default function Services({ user }: ServicesProps) {
 
 function SvcItem({ s, onEdit, onDelete }: { s: Service, onEdit: (s: Service) => void, onDelete: (id: string) => void }) {
   return (
-    <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between group">
-       <div className="flex-1 min-w-0 pr-4">
-         <div className="flex items-center gap-2 mb-0.5">
-           <h4 className="font-bold text-gray-900 truncate">{s.name}</h4>
-           {s.dur > 0 && <span className="flex items-center gap-0.5 text-[10px] font-bold text-gray-400 uppercase"><Clock className="w-2.5 h-2.5" /> {s.dur}ph</span>}
-         </div>
-         <p className="text-xs text-gray-500 font-medium line-clamp-1 italic">{s.desc || '— Không có mô tả —'}</p>
-       </div>
-       <div className="flex items-center gap-3">
-         <span className="text-sm font-black text-accent">{fmt(s.price)}</span>
-         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-           <button onClick={() => onEdit(s)} className="p-2 text-gray-400 hover:text-accent hover:bg-accent-light rounded-lg"><Pencil className="w-4 h-4" /></button>
-           <button onClick={() => onDelete(s.id)} className="p-2 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
-         </div>
-       </div>
+    <div className="group flex items-center gap-2 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm transition-all hover:border-accent/20 hover:shadow-md">
+      <button
+        onClick={() => onEdit(s)}
+        className="flex min-h-[64px] min-w-0 flex-1 touch-manipulation select-none items-center justify-between gap-3 rounded-xl px-1 text-left active:scale-[0.99]"
+        type="button"
+        aria-label={`Sửa ${s.name}`}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="mb-0.5 flex items-center gap-2">
+            <h4 className="truncate font-bold text-gray-900">{s.name}</h4>
+            {s.dur > 0 && <span className="flex shrink-0 items-center gap-0.5 text-[10px] font-bold uppercase text-gray-400"><Clock className="h-2.5 w-2.5" /> {s.dur}ph</span>}
+          </div>
+          <p className="line-clamp-1 text-xs font-medium italic text-gray-500">{s.desc || '- Không có mô tả -'}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-sm font-black text-accent">{fmt(s.price)}</span>
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-light text-accent">
+            <Pencil className="h-4 w-4" />
+          </span>
+        </div>
+      </button>
+      <button
+        onClick={() => onDelete(s.id)}
+        className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-xl text-gray-400 transition-colors hover:bg-rose-50 hover:text-rose-500 active:bg-rose-50"
+        type="button"
+        aria-label={`Xoá ${s.name}`}
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
     </div>
   );
 }
