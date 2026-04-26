@@ -14,9 +14,7 @@ import {
   Banknote,
   Smartphone,
   Wallet,
-  Calendar as CalendarIcon,
-  Pencil,
-  Trash2
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -38,14 +36,6 @@ export default function Billing({ user }: BillingProps) {
   const [payMethod, setPayMethod] = useState('cash');
   const [note, setNote] = useState('');
 
-  const [isApptEditOpen, setIsApptEditOpen] = useState(false);
-  const [editApptName, setEditApptName] = useState('');
-  const [editApptPhone, setEditApptPhone] = useState('');
-  const [editApptDate, setEditApptDate] = useState(today());
-  const [editApptTime, setEditApptTime] = useState('09:00');
-  const [editApptSvc, setEditApptSvc] = useState('');
-  const [editApptNote, setEditApptNote] = useState('');
-  
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isDoneOpen, setIsDoneOpen] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
@@ -166,43 +156,6 @@ export default function Billing({ user }: BillingProps) {
     setNote(appt?.note || appt?.svc || '');
   };
 
-  const openAppointmentEdit = () => {
-    if (!selectedAppt) return;
-    setEditApptName(selectedAppt.name);
-    setEditApptPhone(selectedAppt.phone);
-    setEditApptDate(selectedAppt.date);
-    setEditApptTime(selectedAppt.time);
-    setEditApptSvc(selectedAppt.svc);
-    setEditApptNote(selectedAppt.note);
-    setIsApptEditOpen(true);
-  };
-
-  const saveAppointmentEdit = () => {
-    if (!selectedAppt || !editApptName.trim() || !editApptDate) return;
-    const next = appts.map(a => a.id === selectedAppt.id ? {
-      ...a,
-      name: editApptName.trim(),
-      phone: editApptPhone.trim(),
-      date: editApptDate,
-      time: editApptTime,
-      svc: editApptSvc.trim(),
-      note: editApptNote.trim(),
-    } : a);
-    setAppts(next);
-    localStorage.setItem(`bp_appointments_${user.id}`, JSON.stringify(next));
-    setNote(editApptNote.trim() || editApptSvc.trim());
-    setIsApptEditOpen(false);
-  };
-
-  const deleteSelectedAppointment = () => {
-    if (!selectedAppt || !confirm('Xoá lịch hẹn này?')) return;
-    const next = appts.filter(a => a.id !== selectedAppt.id);
-    setAppts(next);
-    localStorage.setItem(`bp_appointments_${user.id}`, JSON.stringify(next));
-    setSelectedApptId('');
-    setNote('');
-  };
-
   return (
     <div className="flex flex-col lg:flex-row gap-6">
       {/* Product Selection Side */}
@@ -296,14 +249,6 @@ export default function Billing({ user }: BillingProps) {
                       </div>
                       <div className="mt-1 truncate text-sm font-black">{selectedAppt.name}</div>
                       <div className="truncate text-[11px] font-medium text-white/70">{selectedAppt.svc || 'Chưa ghi dịch vụ'}{selectedAppt.phone ? ` • ${selectedAppt.phone}` : ''}</div>
-                    </div>
-                    <div className="flex shrink-0 gap-1">
-                      <button onClick={openAppointmentEdit} className="rounded-lg p-2 hover:bg-white/10" type="button" aria-label="Sửa lịch hẹn">
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button onClick={deleteSelectedAppointment} className="rounded-lg p-2 hover:bg-white/10" type="button" aria-label="Xoá lịch hẹn">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -474,51 +419,6 @@ export default function Billing({ user }: BillingProps) {
         )}
       </AnimatePresence>
 
-      {/* Appointment Edit Modal */}
-      <AnimatePresence>
-        {isApptEditOpen && selectedAppt && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[101] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-3xl w-full max-w-sm overflow-hidden p-6 space-y-5 shadow-2xl"
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-serif font-bold text-gray-900">Sửa lịch hẹn</h3>
-                <button onClick={() => setIsApptEditOpen(false)} className="p-1 hover:bg-gray-100 rounded-full" type="button">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                <Field label="Tên khách">
-                  <input value={editApptName} onChange={e => setEditApptName(e.target.value)} className="input-field" />
-                </Field>
-                <Field label="SĐT">
-                  <input value={editApptPhone} onChange={e => setEditApptPhone(e.target.value)} className="input-field" />
-                </Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Ngày">
-                    <input type="date" value={editApptDate} onChange={e => setEditApptDate(e.target.value)} className="input-field" />
-                  </Field>
-                  <Field label="Giờ">
-                    <input type="time" value={editApptTime} onChange={e => setEditApptTime(e.target.value)} className="input-field" />
-                  </Field>
-                </div>
-                <Field label="Dịch vụ dự định">
-                  <textarea value={editApptSvc} onChange={e => setEditApptSvc(e.target.value)} className="input-field min-h-[70px]" />
-                </Field>
-                <Field label="Ghi chú">
-                  <textarea value={editApptNote} onChange={e => setEditApptNote(e.target.value)} className="input-field min-h-[70px]" />
-                </Field>
-              </div>
-              <button onClick={saveAppointmentEdit} className="w-full py-4 bg-accent hover:bg-accent-dark text-white font-bold rounded-2xl transition-all shadow-xl shadow-accent/20">
-                Lưu lịch hẹn
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
       {/* Success Modal */}
       <AnimatePresence>
         {isDoneOpen && lastOrder && (
@@ -557,15 +457,6 @@ export default function Billing({ user }: BillingProps) {
           </div>
         )}
       </AnimatePresence>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string, children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</label>
-      {children}
     </div>
   );
 }
