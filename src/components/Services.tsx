@@ -20,6 +20,7 @@ export default function Services({ user }: ServicesProps) {
   const [groupDesc, setGroupDesc] = useState('');
   const [serviceGroupId, setServiceGroupId] = useState('');
   const [name, setName] = useState('');
+  const [priceMode, setPriceMode] = useState<'fixed' | 'from' | 'quote'>('fixed');
   const [price, setPrice] = useState(0);
   const [dur, setDur] = useState(0);
   const [desc, setDesc] = useState('');
@@ -61,6 +62,7 @@ export default function Services({ user }: ServicesProps) {
       setEditServiceId(service.id);
       setServiceGroupId(service.groupId || selectedGroup.id);
       setName(service.name);
+      setPriceMode(service.priceMode || 'fixed');
       setPrice(service.price);
       setDur(service.dur);
       setDesc(service.desc);
@@ -68,6 +70,7 @@ export default function Services({ user }: ServicesProps) {
       setEditServiceId(null);
       setServiceGroupId(selectedGroup.id);
       setName('');
+      setPriceMode('fixed');
       setPrice(0);
       setDur(0);
       setDesc('');
@@ -114,6 +117,7 @@ export default function Services({ user }: ServicesProps) {
       type: 'service',
       groupId: targetGroup.id,
       groupName: targetGroup.name,
+      priceMode,
       price,
       dur,
       desc: desc.trim(),
@@ -280,8 +284,15 @@ export default function Services({ user }: ServicesProps) {
                   <Field label="Tên dịch vụ con">
                     <input value={name} onChange={e => setName(e.target.value)} placeholder="Ví dụ: Sơn gel tay" className="input-field" />
                   </Field>
+                  <Field label="Kiểu giá">
+                    <select value={priceMode} onChange={e => setPriceMode(e.target.value as 'fixed' | 'from' | 'quote')} className="input-field">
+                      <option value="fixed">Giá cố định</option>
+                      <option value="from">Giá từ...</option>
+                      <option value="quote">Báo giá sau</option>
+                    </select>
+                  </Field>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Field label="Giá (đ)">
+                    <Field label={priceMode === 'from' ? 'Giá từ (đ)' : priceMode === 'quote' ? 'Giá tham khảo (đ)' : 'Giá (đ)'}>
                       <input type="number" value={price || ''} onChange={e => setPrice(parseFloat(e.target.value) || 0)} placeholder="0" className="input-field text-accent" />
                     </Field>
                     <Field label="Thời gian (phút)">
@@ -329,6 +340,12 @@ function GroupCard({ group, active, onSelect, onEdit, onDelete }: { group: Servi
 }
 
 function SvcItem({ s, onEdit, onDelete }: { s: Service, onEdit: (s: Service) => void, onDelete: (id: string) => void }) {
+  const priceLabel = s.priceMode === 'quote'
+    ? 'Báo giá sau'
+    : s.priceMode === 'from'
+      ? `Từ ${fmt(s.price)}`
+      : fmt(s.price);
+
   return (
     <div className="group flex items-center gap-2 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm transition-all hover:border-accent/20 hover:shadow-md">
       <button onClick={() => onEdit(s)} className="flex min-h-[64px] min-w-0 flex-1 touch-manipulation select-none items-center justify-between gap-3 rounded-xl px-1 text-left active:scale-[0.99]" type="button" aria-label={`Sửa ${s.name}`}>
@@ -340,7 +357,7 @@ function SvcItem({ s, onEdit, onDelete }: { s: Service, onEdit: (s: Service) => 
           <p className="line-clamp-1 text-xs font-medium italic text-gray-500">{s.desc || '- Không có mô tả -'}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <span className="text-sm font-black text-accent">{fmt(s.price)}</span>
+          <span className="text-sm font-black text-accent">{priceLabel}</span>
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-light text-accent">
             <Pencil className="h-4 w-4" />
           </span>

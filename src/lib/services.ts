@@ -36,6 +36,7 @@ function normalizeGroups(groups: ServiceGroup[]): ServiceGroup[] {
     services: (group.services || []).map(service => ({
       ...service,
       type: service.type || 'service',
+      priceMode: service.priceMode || 'fixed',
       groupId: group.id,
       groupName: group.name,
     })),

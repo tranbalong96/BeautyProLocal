@@ -84,12 +84,23 @@ export default function Billing({ user }: BillingProps) {
     });
   };
 
+  const updateItemPrice = (id: string, value: number) => {
+    setCart(prev => {
+      const next = { ...prev };
+      if (next[id]) {
+        next[id] = { ...next[id], price: Math.max(0, value) };
+      }
+      return next;
+    });
+  };
+
   const subtotal = Object.values(cart).reduce((sum, item: OrderItem) => sum + item.price * item.qty, 0);
+  const hasUnpricedQuoteItem = Object.values(cart).some(item => item.priceMode === 'quote' && item.price <= 0);
   const discount = discountType === 'percent' ? Math.round(subtotal * discountValue / 100) : discountValue;
   const total = Math.max(0, subtotal - discount);
 
   const handleCheckout = () => {
-    if (Object.keys(cart).length === 0 || !selectedAppt) return;
+    if (Object.keys(cart).length === 0 || !selectedAppt || hasUnpricedQuoteItem) return;
     setIsCheckoutOpen(true);
   };
 
@@ -182,6 +193,13 @@ export default function Billing({ user }: BillingProps) {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
           {filteredSvcs.map(s => (
+            (() => {
+              const priceLabel = s.priceMode === 'quote'
+                ? 'Báo giá sau'
+                : s.priceMode === 'from'
+                  ? `Từ ${fmt(s.price)}`
+                  : fmt(s.price);
+              return (
             <button
               key={s.id}
               onClick={() => toggleItem(s)}
@@ -206,8 +224,10 @@ export default function Billing({ user }: BillingProps) {
                   {s.name}
                 </div>
               </div>
-              <div className="mt-3 text-sm font-black text-accent">{fmt(s.price)}</div>
+              <div className="mt-3 text-sm font-black text-accent">{priceLabel}</div>
             </button>
+              );
+            })()
           ))}
         </div>
       </div>
@@ -267,7 +287,20 @@ export default function Billing({ user }: BillingProps) {
                   <div key={item.id} className="flex items-center justify-between group">
                     <div className="min-w-0 flex-1 pr-4">
                       <div className="text-sm font-bold text-gray-900 truncate uppercase tracking-tight">{item.name}</div>
-                      <div className="text-[10px] text-gray-400 font-bold">{fmt(item.price)}</div>
+                      {item.priceMode === 'quote' || item.priceMode === 'from' ? (
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-gray-400">{item.priceMode === 'from' ? 'Giá thực tế' : 'Nhập giá'}</span>
+                          <input
+                            type="number"
+                            value={item.price || ''}
+                            onChange={e => updateItemPrice(item.id, parseFloat(e.target.value) || 0)}
+                            placeholder="0"
+                            className="h-8 w-28 rounded-lg border border-gray-200 px-2 text-xs font-bold text-accent outline-none focus:border-accent"
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-gray-400 font-bold">{fmt(item.price)}</div>
+                      )}
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="flex items-center bg-gray-50 rounded-full border border-gray-100 px-1 py-1">
@@ -329,10 +362,10 @@ export default function Billing({ user }: BillingProps) {
 
               <button 
                 onClick={handleCheckout}
-                disabled={total === 0 || !selectedAppt}
+                disabled={total === 0 || !selectedAppt || hasUnpricedQuoteItem}
                 className="w-full bg-accent disabled:bg-gray-300 hover:bg-accent-dark text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-accent/20"
               >
-                Tiếp tục thanh toán
+                {hasUnpricedQuoteItem ? 'Nhập giá trước khi thanh toán' : 'Tiếp tục thanh toán'}
                 <ArrowRight className="w-5 h-5 px-1 bg-white/20 rounded-full" />
               </button>
             </div>

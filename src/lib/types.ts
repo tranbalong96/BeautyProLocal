@@ -19,6 +19,7 @@ export interface Service {
   type: 'service' | 'combo';
   groupId?: string;
   groupName?: string;
+  priceMode?: 'fixed' | 'from' | 'quote';
   price: number;
   dur: number;
   desc: string;
