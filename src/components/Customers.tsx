@@ -46,6 +46,7 @@ export default function Customers({ user }: CustomersProps) {
     const next = custs.filter(c => c.id !== id);
     setCusts(next);
     localStorage.setItem(`bp_customers_${user.id}`, JSON.stringify(next));
+    if (editId === id) closeModal();
   };
 
   const openModal = (c?: Customer) => {
@@ -85,51 +86,61 @@ export default function Customers({ user }: CustomersProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map(c => (
-          <div key={c.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+          <div key={c.id} className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 rounded-full -mr-10 -mt-10" />
             
-            <div className="flex items-start justify-between mb-4 relative z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-accent-light flex items-center justify-center text-accent font-black text-xl">
-                  {c.name[0].toUpperCase()}
+            <button onClick={() => openModal(c)} className="relative z-10 w-full p-6 text-left touch-manipulation" type="button">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="w-12 h-12 shrink-0 rounded-2xl bg-accent-light flex items-center justify-center text-accent font-black text-xl">
+                    {c.name[0].toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-lg text-gray-900 leading-tight truncate">{c.name}</h3>
+                    <p className="text-xs text-gray-400 font-bold tracking-tight uppercase truncate">{c.phone || 'Chưa cập nhật SĐT'}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-lg text-gray-900 leading-tight">{c.name}</h3>
-                  <p className="text-xs text-gray-400 font-bold tracking-tight uppercase">{c.phone || 'Chưa cập nhật SĐT'}</p>
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-light text-accent">
+                  <Pencil className="h-4 w-4" />
                 </div>
               </div>
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => openModal(c)} className="p-2 text-gray-400 hover:text-accent hover:bg-accent-light rounded-lg"><Pencil className="w-4 h-4" /></button>
-                <button onClick={() => deleteCust(c.id)} className="p-2 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="p-2 bg-gray-50 rounded-xl text-center">
-                <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Tổng đơn</div>
-                <div className="text-sm font-black text-gray-700">{c.totalOrders || 0}</div>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="p-2 bg-gray-50 rounded-xl text-center">
+                  <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Tổng đơn</div>
+                  <div className="text-sm font-black text-gray-700">{c.totalOrders || 0}</div>
+                </div>
+                <div className="p-2 bg-accent/5 rounded-xl text-center">
+                  <div className="text-[9px] font-black text-accent/60 uppercase tracking-widest leading-none mb-1">Tổng chi</div>
+                  <div className="text-sm font-black text-accent">{fmt(c.totalSpent || 0)}</div>
+                </div>
               </div>
-              <div className="p-2 bg-accent/5 rounded-xl text-center">
-                <div className="text-[9px] font-black text-accent/60 uppercase tracking-widest leading-none mb-1">Tổng chi</div>
-                <div className="text-sm font-black text-accent">{fmt(c.totalSpent || 0)}</div>
-              </div>
-            </div>
 
-            {c.note && (
-              <div className="bg-amber-50/50 border border-amber-100/50 p-3 rounded-xl">
-                <div className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-1">Ghi chú</div>
-                <p className="text-xs text-amber-700 font-medium line-clamp-2 italic">{c.note}</p>
-              </div>
-            )}
-            
-            <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center text-[10px] font-bold text-gray-400">
-              <span className="uppercase tracking-widest">Lần cuối: {c.lastVisit ? fmtDate(c.lastVisit) : 'Mới'}</span>
-              {c.dob && (
-                <span className="text-rose-400 flex items-center gap-1 uppercase tracking-widest">
-                  🎂 {new Date(c.dob).toLocaleDateString('vi-VN', {day:'numeric', month:'short'})}
-                </span>
+              {c.note && (
+                <div className="bg-amber-50/50 border border-amber-100/50 p-3 rounded-xl">
+                  <div className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-1">Ghi chú</div>
+                  <p className="text-xs text-amber-700 font-medium line-clamp-2 italic">{c.note}</p>
+                </div>
               )}
-            </div>
+              
+              <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center text-[10px] font-bold text-gray-400">
+                <span className="uppercase tracking-widest">Lần cuối: {c.lastVisit ? fmtDate(c.lastVisit) : 'Mới'}</span>
+                {c.dob && (
+                  <span className="text-rose-400 flex items-center gap-1 uppercase tracking-widest">
+                    🎂 {new Date(c.dob).toLocaleDateString('vi-VN', {day:'numeric', month:'short'})}
+                  </span>
+                )}
+              </div>
+            </button>
+
+            <button
+              onClick={() => deleteCust(c.id)}
+              className="absolute bottom-4 right-4 z-20 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-gray-400 shadow-sm ring-1 ring-gray-100 hover:bg-rose-50 hover:text-rose-500"
+              type="button"
+              aria-label={`Xoá ${c.name}`}
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
           </div>
         ))}
       </div>
@@ -152,7 +163,19 @@ export default function Customers({ user }: CustomersProps) {
                 <div className="space-y-1.5"><label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ghi chú</label>
                 <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="..." className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-accent text-sm font-medium min-h-[60px]"/></div>
               </div>
-              <button onClick={saveCust} className="w-full py-4 bg-accent text-white font-bold rounded-2xl shadow-xl shadow-accent/20">{editId ? 'Lưu thay đổi' : 'Tạo mới'}</button>
+              <div className="space-y-3">
+                <button onClick={saveCust} className="w-full py-4 bg-accent text-white font-bold rounded-2xl shadow-xl shadow-accent/20">{editId ? 'Lưu thay đổi' : 'Tạo mới'}</button>
+                {editId && (
+                  <button
+                    onClick={() => deleteCust(editId)}
+                    className="w-full py-3 border border-rose-100 bg-rose-50 text-rose-600 font-bold rounded-2xl hover:bg-rose-100 transition-colors flex items-center justify-center gap-2"
+                    type="button"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Xoá khách hàng
+                  </button>
+                )}
+              </div>
             </motion.div>
           </div>
         )}
