@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { User, Order } from '../lib/types';
 import { fmt, fmtDate, cn } from '../lib/utils';
-import { Search, Eye, Download, Printer } from 'lucide-react';
+import { Search, Eye, Download, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 
 interface OrdersProps {
   user: User;
@@ -9,6 +10,7 @@ interface OrdersProps {
 
 export default function Orders({ user }: OrdersProps) {
   const [search, setSearch] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const orders = useMemo(() => {
     const list = JSON.parse(localStorage.getItem(`bp_orders_${user.id}`) || '[]') as Order[];
     return list.slice().reverse();
@@ -25,6 +27,118 @@ export default function Orders({ user }: OrdersProps) {
     momo: 'MoMo',
     zalopay: 'ZaloPay',
     card: 'Thẻ'
+  };
+
+  const exportReceiptImage = (order: Order) => {
+    const canvas = document.createElement('canvas');
+    const width = 900;
+    const lineHeight = 34;
+    const itemLines = order.items.reduce((sum, item) => sum + wrapText(`${item.name} x${item.qty}`, 32).length, 0);
+    const height = 650 + itemLines * lineHeight + (order.note ? 80 : 0);
+    const scale = window.devicePixelRatio || 2;
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.scale(scale, scale);
+    ctx.fillStyle = '#FAFAF9';
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#FFFFFF';
+    roundRect(ctx, 40, 40, width - 80, height - 80, 28);
+    ctx.fill();
+
+    let y = 100;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#7C3AED';
+    ctx.font = '800 42px Inter, Arial, sans-serif';
+    ctx.fillText('BeautyPro', width / 2, y);
+    y += 44;
+    ctx.fillStyle = '#111827';
+    ctx.font = '700 24px Inter, Arial, sans-serif';
+    ctx.fillText(user.shop || 'Hoá đơn dịch vụ', width / 2, y);
+    y += 38;
+    ctx.fillStyle = '#6B7280';
+    ctx.font = '600 18px Inter, Arial, sans-serif';
+    ctx.fillText(`Mã hoá đơn: ${order.id.slice(0, 8)} • ${fmtDate(order.date)}`, width / 2, y);
+
+    y += 58;
+    drawDivider(ctx, y, width);
+    y += 42;
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#111827';
+    ctx.font = '800 24px Inter, Arial, sans-serif';
+    ctx.fillText(order.customer, 80, y);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#7C3AED';
+    ctx.fillText(methods[order.method] || order.method, width - 80, y);
+    y += 44;
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#6B7280';
+    ctx.font = '800 15px Inter, Arial, sans-serif';
+    ctx.fillText('DỊCH VỤ', 80, y);
+    ctx.textAlign = 'right';
+    ctx.fillText('THÀNH TIỀN', width - 80, y);
+    y += 22;
+    drawDivider(ctx, y, width);
+    y += 36;
+
+    order.items.forEach(item => {
+      const lines = wrapText(`${item.name} x${item.qty}`, 32);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#111827';
+      ctx.font = '700 21px Inter, Arial, sans-serif';
+      lines.forEach((line, idx) => {
+        ctx.fillText(line, 80, y + idx * lineHeight);
+      });
+      ctx.fillStyle = '#6B7280';
+      ctx.font = '600 16px Inter, Arial, sans-serif';
+      ctx.fillText(`${fmt(item.price)} / lần`, 80, y + lines.length * lineHeight);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#111827';
+      ctx.font = '800 21px Inter, Arial, sans-serif';
+      ctx.fillText(fmt(item.price * item.qty), width - 80, y);
+      y += (lines.length + 1) * lineHeight + 18;
+    });
+
+    drawDivider(ctx, y, width);
+    y += 44;
+    drawAmountRow(ctx, 'Tạm tính', fmt(order.subtotal), y, width);
+    y += 34;
+    drawAmountRow(ctx, 'Giảm giá', `-${fmt(order.discount)}`, y, width, '#EF4444');
+    y += 48;
+    drawDivider(ctx, y, width);
+    y += 56;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#111827';
+    ctx.font = '900 26px Inter, Arial, sans-serif';
+    ctx.fillText('Tổng cộng', 80, y);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#7C3AED';
+    ctx.font = '900 36px Inter, Arial, sans-serif';
+    ctx.fillText(fmt(order.total), width - 80, y);
+
+    if (order.note) {
+      y += 58;
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#6B7280';
+      ctx.font = '700 16px Inter, Arial, sans-serif';
+      ctx.fillText(`Ghi chú: ${order.note}`, 80, y);
+    }
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '600 15px Inter, Arial, sans-serif';
+    ctx.fillText('Cảm ơn quý khách và hẹn gặp lại.', width / 2, height - 82);
+
+    const link = document.createElement('a');
+    link.download = `beautypro-hoa-don-${order.id.slice(0, 8)}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
   };
 
   return (
@@ -77,7 +191,7 @@ export default function Orders({ user }: OrdersProps) {
                   </td>
                   <td className="px-6 py-4 text-xs font-semibold text-gray-500">{fmtDate(o.date)}</td>
                   <td className="px-6 py-4 text-right">
-                    <button className="p-2 hover:bg-accent-light hover:text-accent rounded-lg transition-all text-gray-400 flex items-center justify-end gap-1">
+                    <button onClick={() => setSelectedOrder(o)} className="p-2 hover:bg-accent-light hover:text-accent rounded-lg transition-all text-gray-400 flex items-center justify-end gap-1">
                       <span className="text-sm">👁️</span>
                       <Eye className="w-4 h-4" />
                     </button>
@@ -94,6 +208,124 @@ export default function Orders({ user }: OrdersProps) {
           </table>
         </div>
       </div>
+
+      <AnimatePresence>
+        {selectedOrder && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl"
+            >
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-2xl font-serif font-bold text-gray-900">Chi tiết hoá đơn</h3>
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400">#{selectedOrder.id.slice(0, 8)} • {fmtDate(selectedOrder.date)}</p>
+                </div>
+                <button onClick={() => setSelectedOrder(null)} className="rounded-full p-1 hover:bg-gray-100">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Khách hàng</div>
+                <div className="mt-1 text-lg font-black text-gray-900">{selectedOrder.customer}</div>
+                <div className="mt-2 inline-flex rounded-lg bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-tight text-gray-500">
+                  {methods[selectedOrder.method] || selectedOrder.method}
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {selectedOrder.items.map(item => (
+                  <div key={item.id} className="flex items-start justify-between gap-4 rounded-2xl border border-gray-100 p-4">
+                    <div className="min-w-0">
+                      <div className="font-bold text-gray-900">{item.name}</div>
+                      <div className="mt-1 text-xs font-medium text-gray-500">{fmt(item.price)} x {item.qty}</div>
+                    </div>
+                    <div className="shrink-0 text-sm font-black text-accent">{fmt(item.price * item.qty)}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 space-y-2 rounded-2xl bg-accent-light p-4">
+                <AmountLine label="Tạm tính" value={fmt(selectedOrder.subtotal)} />
+                <AmountLine label="Giảm giá" value={`-${fmt(selectedOrder.discount)}`} danger />
+                <div className="border-t border-accent/10 pt-3">
+                  <AmountLine label="Tổng cộng" value={fmt(selectedOrder.total)} total />
+                </div>
+              </div>
+
+              {selectedOrder.note && (
+                <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm font-medium text-amber-800">
+                  {selectedOrder.note}
+                </div>
+              )}
+
+              <button onClick={() => exportReceiptImage(selectedOrder)} className="mt-6 w-full rounded-2xl bg-accent py-4 font-bold text-white shadow-xl shadow-accent/20 transition-all hover:bg-accent-dark flex items-center justify-center gap-2">
+                <Download className="h-5 w-5" />
+                Xuất ảnh hoá đơn
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
+}
+
+function AmountLine({ label, value, danger = false, total = false }: { label: string, value: string, danger?: boolean, total?: boolean }) {
+  return (
+    <div className={cn("flex items-center justify-between", total ? "text-lg font-black" : "text-sm font-bold")}>
+      <span className={total ? "text-gray-900" : "text-gray-500"}>{label}</span>
+      <span className={cn(total ? "text-accent" : "text-gray-900", danger && "text-rose-500")}>{value}</span>
+    </div>
+  );
+}
+
+function wrapText(text: string, maxLength: number) {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let current = '';
+  words.forEach(word => {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length > maxLength && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+  });
+  if (current) lines.push(current);
+  return lines;
+}
+
+function drawDivider(ctx: CanvasRenderingContext2D, y: number, width: number) {
+  ctx.strokeStyle = '#E5E7EB';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(80, y);
+  ctx.lineTo(width - 80, y);
+  ctx.stroke();
+}
+
+function drawAmountRow(ctx: CanvasRenderingContext2D, label: string, value: string, y: number, width: number, color = '#111827') {
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#6B7280';
+  ctx.font = '700 18px Inter, Arial, sans-serif';
+  ctx.fillText(label, 80, y);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = color;
+  ctx.font = '800 20px Inter, Arial, sans-serif';
+  ctx.fillText(value, width - 80, y);
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + width, y, x + width, y + height, radius);
+  ctx.arcTo(x + width, y + height, x, y + height, radius);
+  ctx.arcTo(x, y + height, x, y, radius);
+  ctx.arcTo(x, y, x + width, y, radius);
+  ctx.closePath();
 }
