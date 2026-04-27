@@ -33,8 +33,8 @@ export default function Orders({ user }: OrdersProps) {
     const canvas = document.createElement('canvas');
     const width = 900;
     const lineHeight = 34;
-    const itemLines = order.items.reduce((sum, item) => sum + wrapText(`${item.name} x${item.qty}`, 32).length, 0);
-    const height = 760 + itemLines * lineHeight + (order.note ? 80 : 0);
+    const itemLines = order.items.reduce((sum, item) => sum + wrapText(item.name, 30).length, 0);
+    const height = 820 + itemLines * lineHeight + (order.note ? 80 : 0);
     const scale = window.devicePixelRatio || 2;
     canvas.width = width * scale;
     canvas.height = height * scale;
@@ -81,6 +81,10 @@ export default function Orders({ user }: OrdersProps) {
     ctx.fillStyle = '#6B7280';
     ctx.font = '800 15px Inter, Arial, sans-serif';
     ctx.fillText('DỊCH VỤ', 80, y);
+    ctx.textAlign = 'center';
+    ctx.fillText('SL', 500, y);
+    ctx.textAlign = 'right';
+    ctx.fillText('ĐƠN GIÁ', 660, y);
     ctx.textAlign = 'right';
     ctx.fillText('THÀNH TIỀN', width - 80, y);
     y += 22;
@@ -88,26 +92,30 @@ export default function Orders({ user }: OrdersProps) {
     y += 36;
 
     order.items.forEach(item => {
-      const lines = wrapText(`${item.name} x${item.qty}`, 32);
+      const lines = wrapText(item.name, 30);
       ctx.textAlign = 'left';
       ctx.fillStyle = '#111827';
       ctx.font = '700 21px Inter, Arial, sans-serif';
       lines.forEach((line, idx) => {
         ctx.fillText(line, 80, y + idx * lineHeight);
       });
-      ctx.fillStyle = '#6B7280';
-      ctx.font = '600 16px Inter, Arial, sans-serif';
-      ctx.fillText(`${fmt(item.price)} / lần`, 80, y + lines.length * lineHeight);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#111827';
+      ctx.font = '800 20px Inter, Arial, sans-serif';
+      ctx.fillText(String(item.qty), 500, y);
       ctx.textAlign = 'right';
       ctx.fillStyle = '#111827';
-      ctx.font = '800 21px Inter, Arial, sans-serif';
+      ctx.font = '700 19px Inter, Arial, sans-serif';
+      ctx.fillText(fmt(item.price), 660, y);
+      ctx.fillStyle = '#7C3AED';
+      ctx.font = '900 21px Inter, Arial, sans-serif';
       ctx.fillText(fmt(item.price * item.qty), width - 80, y);
-      y += (lines.length + 1) * lineHeight + 18;
+      y += Math.max(lines.length, 1) * lineHeight + 24;
     });
 
     drawDivider(ctx, y, width);
     y += 44;
-    drawAmountRow(ctx, 'Tạm tính', fmt(order.subtotal), y, width);
+    drawAmountRow(ctx, 'Thành tiền', fmt(order.subtotal), y, width);
     y += 34;
     drawAmountRow(ctx, 'Giảm giá', `-${fmt(order.discount)}`, y, width, '#EF4444');
     y += 48;
@@ -116,7 +124,7 @@ export default function Orders({ user }: OrdersProps) {
     ctx.textAlign = 'left';
     ctx.fillStyle = '#111827';
     ctx.font = '900 26px Inter, Arial, sans-serif';
-    ctx.fillText('Tổng cộng', 80, y);
+    ctx.fillText('Tổng thanh toán', 80, y);
     ctx.textAlign = 'right';
     ctx.fillStyle = '#7C3AED';
     ctx.font = '900 36px Inter, Arial, sans-serif';
