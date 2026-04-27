@@ -34,7 +34,7 @@ export default function Orders({ user }: OrdersProps) {
     const width = 900;
     const lineHeight = 34;
     const itemLines = order.items.reduce((sum, item) => sum + wrapText(`${item.name} x${item.qty}`, 32).length, 0);
-    const height = 650 + itemLines * lineHeight + (order.note ? 80 : 0);
+    const height = 760 + itemLines * lineHeight + (order.note ? 80 : 0);
     const scale = window.devicePixelRatio || 2;
     canvas.width = width * scale;
     canvas.height = height * scale;
@@ -50,16 +50,16 @@ export default function Orders({ user }: OrdersProps) {
     roundRect(ctx, 40, 40, width - 80, height - 80, 28);
     ctx.fill();
 
-    let y = 100;
+    let y = 108;
     ctx.textAlign = 'center';
     ctx.fillStyle = '#7C3AED';
-    ctx.font = '800 42px Inter, Arial, sans-serif';
-    ctx.fillText('BeautyPro', width / 2, y);
-    y += 44;
-    ctx.fillStyle = '#111827';
-    ctx.font = '700 24px Inter, Arial, sans-serif';
+    ctx.font = '900 42px Inter, Arial, sans-serif';
     ctx.fillText(user.shop || 'Hoá đơn dịch vụ', width / 2, y);
-    y += 38;
+    y += 42;
+    ctx.fillStyle = '#111827';
+    ctx.font = '800 24px Inter, Arial, sans-serif';
+    ctx.fillText('Hoá đơn dịch vụ', width / 2, y);
+    y += 36;
     ctx.fillStyle = '#6B7280';
     ctx.font = '600 18px Inter, Arial, sans-serif';
     ctx.fillText(`Mã hoá đơn: ${order.id.slice(0, 8)} • ${fmtDate(order.date)}`, width / 2, y);
@@ -121,6 +121,7 @@ export default function Orders({ user }: OrdersProps) {
     ctx.fillStyle = '#7C3AED';
     ctx.font = '900 36px Inter, Arial, sans-serif';
     ctx.fillText(fmt(order.total), width - 80, y);
+    y += 42;
 
     if (order.note) {
       y += 58;
